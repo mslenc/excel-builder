@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jameskleeh.excel.ExcelSpec" tests="10" skipped="0" failures="0" errors="0" timestamp="2023-01-17T16:27:35" hostname="ansible-nas" time="0.02">
+  <properties/>
+  <testcase name="test getRenderer order" classname="com.jameskleeh.excel.ExcelSpec" time="0.007"/>
+  <testcase name="test getRenderer subclass" classname="com.jameskleeh.excel.ExcelSpec" time="0.004"/>
+  <testcase name="test getRenderer higher priority" classname="com.jameskleeh.excel.ExcelSpec" time="0.001"/>
+  <testcase name="test getRenderer returns null" classname="com.jameskleeh.excel.ExcelSpec" time="0.001"/>
+  <testcase name="test getFormat higher priority" classname="com.jameskleeh.excel.ExcelSpec" time="0.0"/>
+  <testcase name="test getFormat order" classname="com.jameskleeh.excel.ExcelSpec" time="0.0"/>
+  <testcase name="test getFormat subclass" classname="com.jameskleeh.excel.ExcelSpec" time="0.0"/>
+  <testcase name="test getFormat returns null" classname="com.jameskleeh.excel.ExcelSpec" time="0.0"/>
+  <testcase name="test getFormat(String) returns a built in format if it exists" classname="com.jameskleeh.excel.ExcelSpec" time="0.0"/>
+  <testcase name="test creating cells with registered cell formats" classname="com.jameskleeh.excel.ExcelSpec" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

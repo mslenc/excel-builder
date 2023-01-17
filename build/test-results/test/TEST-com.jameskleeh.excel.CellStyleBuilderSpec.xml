@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jameskleeh.excel.CellStyleBuilderSpec" tests="21" skipped="0" failures="0" errors="0" timestamp="2023-01-17T16:27:34" hostname="ansible-nas" time="0.664">
+  <properties/>
+  <testcase name="test convertSimpleOptions" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.433"/>
+  <testcase name="test buildStyle format" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.022"/>
+  <testcase name="test buildStyle font" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.05"/>
+  <testcase name="test buildStyle hidden" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.003"/>
+  <testcase name="test buildStyle locked" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.001"/>
+  <testcase name="test buildStyle wrapped" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.003"/>
+  <testcase name="test buildStyle horizontal alignment" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.003"/>
+  <testcase name="test buildStyle vertical alignment" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.003"/>
+  <testcase name="test buildStyle rotation" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.006"/>
+  <testcase name="test buildStyle indention" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.001"/>
+  <testcase name="test buildStyle border" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.011"/>
+  <testcase name="test buildStyle fill" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.003"/>
+  <testcase name="test buildStyle foreground color" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.002"/>
+  <testcase name="test buildStyle background color" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.003"/>
+  <testcase name="test getStyle pulls from cache" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.003"/>
+  <testcase name="test setStyle cell no options" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.056"/>
+  <testcase name="test setStyle cell options" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.002"/>
+  <testcase name="test setStyle cell options are merged" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.004"/>
+  <testcase name="test merging of options with rows" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.026"/>
+  <testcase name="test merging of options with columns" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.012"/>
+  <testcase name="test number of styles created" classname="com.jameskleeh.excel.CellStyleBuilderSpec" time="0.015"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[ERROR StatusLogger Log4j2 could not find a logging implementation. Please add log4j-core to the classpath. Using SimpleLogger to log to the console...
+]]></system-err>
+</testsuite>

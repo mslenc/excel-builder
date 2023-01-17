@@ -1,0 +1,65 @@
+[[sheets]]
+== Sheets
+
+With the Groovy Excel Builder, you can create documents with as many sheets as you like. In addition, there are several options you have at the sheet level for configuring your document.
+
+=== Underlying API
+
+To get access to the {apachePoi}[Apache POI] API for a given sheet, simply receive an argument to the `sheet` closure:
+
+[source,groovy]
+----
+import org.apache.poi.xssf.usermodel.XSSFSheet
+
+ExcelBuilder.build {
+    sheet { XSSFSheet mySheet ->
+        //Modify mySheet as needed
+    }
+}
+----
+
+=== Sheet Name
+
+You can configure what name you would like to give each sheet by executing the `sheet` method with a `String` argument.
+
+[source,groovy]
+----
+ExcelBuilder.build {
+    sheet("My Sheet") {
+    }
+}
+----
+
+=== Defaults
+
+You can configure defaults for column width and row height in a given sheet by passing a `Map` to the `sheet` method.
+
+[source,groovy]
+----
+ExcelBuilder.build {
+    sheet("My Sheet") {
+    }
+    sheet("My Other Sheet", [width: 20, height: 14F]) {
+    }
+    sheet([width:20]) {
+    }
+}
+----
+
+The width must be an `Integer` and the height can be a `Float` if you want to set the height in points, or `Short` if you do not.
+
+=== Styling
+
+You can set default styles for a sheet by passing a map of options into the `defaultStyle` method. To see what options are available, visit the link:#styles[Styles] section of this document.
+
+[source,groovy]
+----
+ExcelBuilder.build {
+    sheet {
+        defaultStyle([:])
+    }
+}
+----
+
+
+

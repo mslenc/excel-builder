@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CreatesCells.groovy</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">excel-builder</a> &gt; <a href="index.source.html" class="el_package">com.jameskleeh.excel.internal</a> &gt; <span class="el_source">CreatesCells.groovy</span></div><h1>CreatesCells.groovy</h1><pre class="source lang-java linenums">/*
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+        &quot;License&quot;); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an
+&quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+*/
+package com.jameskleeh.excel.internal
+
+import com.jameskleeh.excel.CellFinder
+import com.jameskleeh.excel.CellStyleBuilder
+import com.jameskleeh.excel.Excel
+import com.jameskleeh.excel.Font
+import com.jameskleeh.excel.style.CellRangeBorderStyleApplier
+import groovy.transform.CompileStatic
+import org.apache.poi.common.usermodel.Hyperlink
+import org.apache.poi.common.usermodel.HyperlinkType
+import org.apache.poi.ss.util.CellRangeAddress
+import org.apache.poi.xssf.usermodel.XSSFCell
+import org.apache.poi.xssf.usermodel.XSSFSheet
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+
+import java.awt.*
+
+/**
+ * A base class used to create cells
+ *
+ * @author James Kleeh
+ */
+@CompileStatic
+abstract class CreatesCells {
+
+    protected final XSSFWorkbook workbook
+    protected final XSSFSheet sheet
+    protected Map defaultOptions
+    protected final Map&lt;Object, Integer&gt; columnIndexes
+    protected final CellStyleBuilder styleBuilder
+    protected static final Map LINK_OPTIONS = [font: [style: Font.UNDERLINE, color: Color.BLUE]]
+
+    CreatesCells(XSSFSheet sheet, Map defaultOptions, Map&lt;Object, Integer&gt; columnIndexes, CellStyleBuilder styleBuilder) {
+<span class="fc" id="L52">        this.workbook = sheet.workbook</span>
+<span class="fc" id="L53">        this.sheet = sheet</span>
+<span class="fc" id="L54">        this.defaultOptions = defaultOptions</span>
+<span class="fc" id="L55">        this.columnIndexes = columnIndexes</span>
+<span class="fc" id="L56">        this.styleBuilder = styleBuilder</span>
+    }
+
+    /**
+     * Sets the default styles to use for the given row or column
+     *
+     * @param options The style options
+     */
+    void defaultStyle(Map options) {
+<span class="fc" id="L65">        options = new LinkedHashMap(options)</span>
+<span class="fc" id="L66">        styleBuilder.convertSimpleOptions(options)</span>
+<span class="pc bpc" id="L67" title="2 of 4 branches missed.">        if (defaultOptions == null) {</span>
+<span class="nc" id="L68">            defaultOptions = options</span>
+<span class="nc" id="L69">        } else {</span>
+<span class="fc" id="L70">            defaultOptions = styleBuilder.merge(defaultOptions, options)</span>
+<span class="fc" id="L71">        }</span>
+    }
+
+    protected abstract XSSFCell nextCell()
+
+    /**
+     * Skips cells
+     *
+     * @param num The number of cells to skip
+     */
+    abstract void skipCells(int num)
+
+    protected void setStyle(Object value, XSSFCell cell, Map options) {
+<span class="fc" id="L84">        styleBuilder.setStyle(value, cell, options, defaultOptions)</span>
+    }
+
+    /**
+     * Creates a header cell
+     *
+     * @param value The cell value
+     * @param id The cell identifer
+     * @param style The cell style
+     * @return The native cell
+     */
+    XSSFCell column(String value, Object id, final Map style = null) {
+<span class="fc" id="L96">        XSSFCell col = cell(value, style)</span>
+<span class="fc" id="L97">        columnIndexes[id] = col.columnIndex</span>
+<span class="fc" id="L98">        col</span>
+    }
+
+    /**
+     * Assigns a formula to a new cell
+     *
+     * @param formulaString The formula
+     * @param style The cell style
+     * @return The native cell
+     */
+    XSSFCell formula(String formulaString, final Map style) {
+<span class="fc" id="L109">        XSSFCell cell = nextCell()</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (formulaString.startsWith('=')) {</span>
+<span class="fc" id="L111">            formulaString = formulaString[1..-1]</span>
+        }
+<span class="fc" id="L113">        cell.setCellFormula(formulaString)</span>
+<span class="fc" id="L114">        setStyle(null, cell, style)</span>
+<span class="fc" id="L115">        cell</span>
+    }
+
+    /**
+     * Assigns a formula to a new cell
+     *
+     * @param formulaString The formula
+     * @return The native cell
+     */
+    XSSFCell formula(String formulaString) {
+<span class="fc" id="L125">        formula(formulaString, null)</span>
+    }
+
+    /**
+     * Assigns a formula to a new cell
+     *
+     * @param callable The return value will be assigned to the cell formula. The closure delegate contains helper methods to get references to other cells.
+     * @return The native cell
+     */
+    XSSFCell formula(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CellFinder) Closure callable) {
+<span class="fc" id="L135">        formula(null, callable)</span>
+    }
+
+    /**
+     * Assigns a formula to a new cell
+     *
+     * @param style The cell style
+     * @param callable The return value will be assigned to the cell formula. The closure delegate contains helper methods to get references to other cells.
+     * @return The native cell
+     */
+    XSSFCell formula(final Map style, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CellFinder) Closure callable) {
+<span class="fc" id="L146">        XSSFCell cell = nextCell()</span>
+<span class="fc" id="L147">        callable.resolveStrategy = Closure.DELEGATE_FIRST</span>
+<span class="fc" id="L148">        callable.delegate = new CellFinder(cell, columnIndexes)</span>
+<span class="fc" id="L149">        String formula</span>
+<span class="pc bpc" id="L150" title="2 of 4 branches missed.">        if (callable.maximumNumberOfParameters == 1) {</span>
+<span class="fc" id="L151">            formula = (String)callable.call(cell)</span>
+<span class="fc" id="L152">        } else {</span>
+<span class="nc" id="L153">            formula = (String)callable.call()</span>
+        }
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        if (formula.startsWith('=')) {</span>
+<span class="fc" id="L156">            formula = formula[1..-1]</span>
+        }
+<span class="fc" id="L158">        cell.setCellFormula(formula)</span>
+<span class="fc" id="L159">        setStyle(null, cell, style)</span>
+<span class="fc" id="L160">        cell</span>
+    }
+
+    /**
+     * Creates a new blank cell
+     *
+     * @return The native cell
+     */
+    XSSFCell cell() {
+<span class="fc" id="L169">        cell(null)</span>
+    }
+
+    /**
+     * Creates a new cell and assigns a value
+     *
+     * @param value The value to assign
+     * @return The native cell
+     */
+    XSSFCell cell(Object value) {
+<span class="fc" id="L179">        cell(value, null)</span>
+    }
+
+    /**
+     * Creates a new cell with a value and style
+     *
+     * @param value The value to assign
+     * @param style The cell style options
+     * @return The native cell
+     */
+    XSSFCell cell(Object value, final Map style) {
+<span class="fc" id="L190">        XSSFCell cell = nextCell()</span>
+<span class="fc" id="L191">        setStyle(value, cell, style)</span>
+<span class="fc bfc" id="L192" title="All 4 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L193">            return cell</span>
+        }
+<span class="fc" id="L195">        Closure callable = Excel.getRenderer(value.class)</span>
+<span class="fc bfc" id="L196" title="All 4 branches covered.">        if (callable != null) {</span>
+<span class="fc" id="L197">            value = callable.call(value)</span>
+        }
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        if (value instanceof String) {</span>
+<span class="fc" id="L200">            cell.setCellValue((String)value)</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        } else if (value instanceof Calendar) {</span>
+<span class="fc" id="L202">            cell.setCellValue((Calendar)value)</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        } else if (value instanceof Date) {</span>
+<span class="fc" id="L204">            cell.setCellValue((Date)value)</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">        } else if (value instanceof Number) {</span>
+<span class="fc" id="L206">            cell.setCellValue(((Number)value).doubleValue())</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">        } else if (value instanceof Boolean) {</span>
+<span class="fc" id="L208">            cell.setCellValue((Boolean)value)</span>
+<span class="fc" id="L209">        } else {</span>
+<span class="nc" id="L210">            cell.setCellValue(value.toString())</span>
+        }
+<span class="fc" id="L212">        cell</span>
+    }
+
+    protected XSSFCell handleLink(XSSFCell cell, String address, HyperlinkType linkType) {
+<span class="fc" id="L216">        Hyperlink link = workbook.creationHelper.createHyperlink(linkType)</span>
+<span class="fc" id="L217">        link.address = address</span>
+<span class="fc" id="L218">        cell.hyperlink = link</span>
+<span class="fc" id="L219">        cell</span>
+    }
+
+    /**
+     * Creates a cell with a hyperlink
+     *
+     * @param value The cell value
+     * @param address The link address
+     * @param linkType The type of link. One of {@link HyperlinkType#URL}, {@link HyperlinkType#EMAIL}, {@link HyperlinkType#FILE}
+     * @return The native cell
+     */
+    XSSFCell link(Object value, String address, HyperlinkType linkType) {
+<span class="fc" id="L231">        XSSFCell cell = cell(value, LINK_OPTIONS)</span>
+<span class="fc" id="L232">        handleLink(cell, address, linkType)</span>
+    }
+
+    /**
+     * Creates a cell with a hyperlink to another cell in the document
+     *
+     * @param value The cell value
+     * @param callable The closure to build the link
+     * @return The native cell
+     */
+    XSSFCell link(Object value, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = CellFinder) Closure callable) {
+<span class="fc" id="L243">        XSSFCell cell = cell(value, LINK_OPTIONS)</span>
+<span class="fc" id="L244">        callable.resolveStrategy = Closure.DELEGATE_FIRST</span>
+<span class="fc" id="L245">        callable.delegate = new CellFinder(cell, columnIndexes)</span>
+<span class="fc" id="L246">        handleLink(cell, callable.call().toString(), HyperlinkType.DOCUMENT)</span>
+    }
+
+    /**
+     * Merges cells
+     *
+     * @param style Default styles for merged cells
+     * @param callable To build cell data
+     */
+    abstract void merge(final Map style, Closure callable)
+
+    /**
+     * Merges cells
+     *
+     * @param callable To build cell data
+     */
+    abstract void merge(Closure callable)
+
+    /**
+     * Merges cells
+     *
+     * @param value The cell content
+     * @param count How many cells to merge
+     * @param style Styling for the merged cell
+     */
+    void merge(Object value, Integer count, final Map style = null) {
+<span class="nc" id="L272">        merge(style) {</span>
+<span class="nc" id="L273">            cell(value)</span>
+<span class="nc" id="L274">            skipCells(count)</span>
+        }
+    }
+
+    @SuppressWarnings('UnnecessaryGetter')
+    protected void performMerge(Map style, Closure callable) {
+<span class="fc" id="L280">        Map existingDefaultOptions = defaultOptions</span>
+
+<span class="pc bpc" id="L282" title="2 of 10 branches missed.">        if (style != null &amp;&amp; !style.isEmpty()) {</span>
+<span class="fc" id="L283">            Map newDefaultOptions = new LinkedHashMap(style)</span>
+<span class="fc" id="L284">            styleBuilder.convertSimpleOptions(newDefaultOptions)</span>
+<span class="fc" id="L285">            newDefaultOptions = styleBuilder.merge(defaultOptions, newDefaultOptions)</span>
+<span class="fc" id="L286">            defaultOptions = newDefaultOptions</span>
+        }
+
+<span class="fc bfc" id="L289" title="All 6 branches covered.">        Map borderOptions = defaultOptions?.containsKey('border') ? (Map)defaultOptions.remove('border') : Collections.emptyMap()</span>
+
+<span class="fc" id="L291">        callable.resolveStrategy = Closure.DELEGATE_FIRST</span>
+<span class="fc" id="L292">        callable.delegate = this</span>
+<span class="fc" id="L293">        int startingIndex = mergeIndex</span>
+<span class="fc" id="L294">        callable.call()</span>
+<span class="fc" id="L295">        int endingIndex = mergeIndex - 1</span>
+<span class="pc bpc" id="L296" title="2 of 4 branches missed.">        if (endingIndex &gt; startingIndex) {</span>
+<span class="fc" id="L297">            CellRangeAddress range = getRange(startingIndex, endingIndex)</span>
+<span class="fc" id="L298">            sheet.addMergedRegion(range)</span>
+<span class="fc bfc" id="L299" title="All 4 branches covered.">            if (!borderOptions.isEmpty()) {</span>
+<span class="fc" id="L300">                styleBuilder.applyBorderToRegion(getBorderStyleApplier(range, sheet), borderOptions)</span>
+            }
+        }
+
+<span class="fc" id="L304">        defaultOptions = existingDefaultOptions</span>
+    }
+
+    protected abstract CellRangeAddress getRange(int start, int end)
+
+    protected abstract int getMergeIndex()
+
+    protected abstract CellRangeBorderStyleApplier getBorderStyleApplier(CellRangeAddress range, XSSFSheet sheet)
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RowCellRangeBorderStyleApplier.groovy</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">excel-builder</a> &gt; <a href="index.source.html" class="el_package">com.jameskleeh.excel.style</a> &gt; <span class="el_source">RowCellRangeBorderStyleApplier.groovy</span></div><h1>RowCellRangeBorderStyleApplier.groovy</h1><pre class="source lang-java linenums">package com.jameskleeh.excel.style
+
+import static org.apache.poi.xssf.usermodel.extensions.XSSFCellBorder.BorderSide.*
+
+import groovy.transform.InheritConstructors
+import org.apache.poi.ss.usermodel.BorderStyle
+import org.apache.poi.xssf.usermodel.XSSFColor
+import org.apache.poi.xssf.usermodel.extensions.XSSFCellBorder
+
+/**
+ * Applys styles and borders to a single row of merged cells.
+ *
+ * @author James Kleeh
+ */
+@InheritConstructors
+class RowCellRangeBorderStyleApplier extends CellRangeBorderStyleApplier {
+
+    @Override
+    void applyStyle(XSSFCellBorder.BorderSide side, BorderStyle style) {
+<span class="fc" id="L20">        switch (side) {</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">            case TOP:</span>
+<span class="fc" id="L22">                leftTop.setBorderTop(style)</span>
+<span class="fc" id="L23">                bottomRight.setBorderTop(style)</span>
+<span class="fc" id="L24">                middle?.setBorderTop(style)</span>
+<span class="fc" id="L25">                break</span>
+<span class="pc bfc" id="L26" title="All 2 branches covered.">            case BOTTOM:</span>
+<span class="fc" id="L27">                leftTop.setBorderBottom(style)</span>
+<span class="fc" id="L28">                bottomRight.setBorderBottom(style)</span>
+<span class="fc" id="L29">                middle?.setBorderBottom(style)</span>
+<span class="fc" id="L30">                break</span>
+<span class="pc bfc" id="L31" title="All 2 branches covered.">            case LEFT:</span>
+<span class="fc" id="L32">                leftTop.setBorderLeft(style)</span>
+<span class="fc" id="L33">                break</span>
+<span class="pc bfc" id="L34" title="All 2 branches covered.">            case RIGHT:</span>
+<span class="fc" id="L35">                bottomRight.setBorderRight(style)</span>
+<span class="fc" id="L36">                break</span>
+<span class="fc" id="L37">        }</span>
+    }
+
+    @Override
+    void applyColor(XSSFCellBorder.BorderSide side, XSSFColor color) {
+<span class="fc" id="L42">        switch (side) {</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">            case TOP:</span>
+<span class="fc" id="L44">                leftTop.setTopBorderColor(color)</span>
+<span class="fc" id="L45">                bottomRight.setTopBorderColor(color)</span>
+<span class="fc" id="L46">                middle?.setTopBorderColor(color)</span>
+<span class="fc" id="L47">                break</span>
+<span class="pc bfc" id="L48" title="All 2 branches covered.">            case BOTTOM:</span>
+<span class="fc" id="L49">                leftTop.setBottomBorderColor(color)</span>
+<span class="fc" id="L50">                bottomRight.setBottomBorderColor(color)</span>
+<span class="fc" id="L51">                middle?.setBottomBorderColor(color)</span>
+<span class="fc" id="L52">                break</span>
+<span class="pc bfc" id="L53" title="All 2 branches covered.">            case LEFT:</span>
+<span class="fc" id="L54">                leftTop.setLeftBorderColor(color)</span>
+<span class="fc" id="L55">                break</span>
+<span class="pc bfc" id="L56" title="All 2 branches covered.">            case RIGHT:</span>
+<span class="fc" id="L57">                bottomRight.setRightBorderColor(color)</span>
+<span class="fc" id="L58">                break</span>
+<span class="fc" id="L59">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

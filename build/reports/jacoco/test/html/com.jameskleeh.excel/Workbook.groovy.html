@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Workbook.groovy</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">excel-builder</a> &gt; <a href="index.source.html" class="el_package">com.jameskleeh.excel</a> &gt; <span class="el_source">Workbook.groovy</span></div><h1>Workbook.groovy</h1><pre class="source lang-java linenums">/*
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+&quot;License&quot;); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+&quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+*/
+package com.jameskleeh.excel
+
+import groovy.transform.CompileStatic
+import org.apache.poi.ss.util.WorkbookUtil
+import org.apache.poi.xssf.usermodel.XSSFSheet
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+
+/**
+ * A class used to create a workbook in an excel document
+ *
+ * @author James Kleeh
+ * @since 0.1.0
+ */
+@CompileStatic
+class Workbook {
+
+    private final XSSFWorkbook wb
+    private final CellStyleBuilder styleBuilder
+
+    private static final String WIDTH = 'width'
+    private static final String HEIGHT = 'height'
+
+    Workbook(XSSFWorkbook wb) {
+<span class="fc" id="L42">        this.wb = wb</span>
+<span class="fc" id="L43">        this.styleBuilder = new CellStyleBuilder(wb)</span>
+    }
+
+    /**
+     * Creates a sheet
+     *
+     * @param name The sheet name
+     * @param options Default sheet options
+     * @param callable To build data
+     * @return The native sheet object
+     */
+    XSSFSheet sheet(String name, Map options, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Sheet) Closure callable) {
+<span class="fc" id="L55">        handleSheet(wb.createSheet(WorkbookUtil.createSafeSheetName(name)), options, callable)</span>
+    }
+
+    /**
+     * Creates a sheet
+     *
+     * @param name The sheet name
+     * @param callable To build data
+     * @return The native sheet object
+     */
+    XSSFSheet sheet(String name, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Sheet) Closure callable) {
+<span class="fc" id="L66">        sheet(name, [:], callable)</span>
+    }
+
+    /**
+     * Creates a sheet
+     *
+     * @param callable To build data
+     * @return The native sheet object
+     */
+    XSSFSheet sheet(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Sheet) Closure callable) {
+<span class="fc" id="L76">        sheet([:], callable)</span>
+    }
+
+    /**
+     * Creates a sheet
+     *
+     * @param options Default sheet options
+     * @param callable To build data
+     * @return The native sheet object
+     */
+    XSSFSheet sheet(Map options, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Sheet) Closure callable) {
+<span class="fc" id="L87">        handleSheet(wb.createSheet(), options, callable)</span>
+    }
+
+    private XSSFSheet handleSheet(XSSFSheet sheet, Map options, Closure callable) {
+<span class="fc" id="L91">        callable.resolveStrategy = Closure.DELEGATE_FIRST</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (options.containsKey(WIDTH)) {</span>
+<span class="fc" id="L93">            Object width = options[WIDTH]</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">            if (width instanceof Integer) {</span>
+<span class="fc" id="L95">                sheet.setDefaultColumnWidth(width)</span>
+<span class="fc" id="L96">            } else {</span>
+<span class="nc" id="L97">                throw new IllegalArgumentException('Sheet default column width must be an integer')</span>
+            }
+        }
+
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if (options.containsKey(HEIGHT)) {</span>
+<span class="fc" id="L102">            Object height = options[HEIGHT]</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">            if (height instanceof Short) {</span>
+<span class="nc" id="L104">                sheet.setDefaultRowHeight(height)</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">            } else if (height instanceof Float) {</span>
+<span class="fc" id="L106">                sheet.setDefaultRowHeightInPoints(height)</span>
+<span class="fc" id="L107">            } else {</span>
+<span class="nc" id="L108">                throw new IllegalArgumentException('Sheet default row height must be a short or float')</span>
+            }
+        }
+
+<span class="fc" id="L112">        callable.delegate = new Sheet(sheet, styleBuilder)</span>
+<span class="pc bpc" id="L113" title="2 of 4 branches missed.">        if (callable.maximumNumberOfParameters == 1) {</span>
+<span class="fc" id="L114">            callable.call(sheet)</span>
+<span class="fc" id="L115">        } else {</span>
+<span class="nc" id="L116">            callable.call()</span>
+        }
+<span class="fc" id="L118">        sheet</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

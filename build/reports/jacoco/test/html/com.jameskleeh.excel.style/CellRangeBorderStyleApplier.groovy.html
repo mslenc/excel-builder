@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CellRangeBorderStyleApplier.groovy</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">excel-builder</a> &gt; <a href="index.source.html" class="el_package">com.jameskleeh.excel.style</a> &gt; <span class="el_source">CellRangeBorderStyleApplier.groovy</span></div><h1>CellRangeBorderStyleApplier.groovy</h1><pre class="source lang-java linenums">package com.jameskleeh.excel.style
+
+import groovy.transform.CompileStatic
+import groovy.transform.TupleConstructor
+import org.apache.poi.ss.usermodel.BorderStyle
+import org.apache.poi.ss.usermodel.Cell
+import org.apache.poi.ss.usermodel.Row
+import org.apache.poi.ss.usermodel.Sheet
+import org.apache.poi.ss.util.CellRangeAddress
+import org.apache.poi.ss.util.CellUtil
+import org.apache.poi.xssf.usermodel.XSSFCellStyle
+import org.apache.poi.xssf.usermodel.XSSFColor
+import org.apache.poi.xssf.usermodel.XSSFSheet
+import org.apache.poi.xssf.usermodel.extensions.XSSFCellBorder.BorderSide
+
+/**
+ * Applys styles and borders to a range of cells (merged).
+ * Assumes the merged region is within a single row or column, which
+ * is all that is supported in the current API
+ *
+ * @author James Kleeh
+ */
+@CompileStatic
+@TupleConstructor
+abstract class CellRangeBorderStyleApplier implements BorderStyleApplier {
+
+    CellRangeAddress range
+    Sheet sheet
+
+    protected XSSFCellStyle leftTop
+    protected XSSFCellStyle middle
+    protected XSSFCellStyle bottomRight
+
+    CellRangeBorderStyleApplier(CellRangeAddress range, XSSFSheet sheet) {
+<span class="fc" id="L35">        this.range = range</span>
+<span class="fc" id="L36">        this.sheet = sheet</span>
+<span class="fc" id="L37">        leftTop = (XSSFCellStyle) sheet.workbook.createCellStyle()</span>
+<span class="pc bpc" id="L38" title="2 of 4 branches missed.">        if (range.numberOfCells &gt; 2) {</span>
+<span class="fc" id="L39">            middle = (XSSFCellStyle) sheet.workbook.createCellStyle()</span>
+        }
+<span class="fc" id="L41">        bottomRight = (XSSFCellStyle) sheet.workbook.createCellStyle()</span>
+
+<span class="fc" id="L43">        Row row = CellUtil.getRow(range.firstRow, sheet)</span>
+<span class="fc" id="L44">        leftTop.cloneStyleFrom(CellUtil.getCell(row, range.firstColumn).cellStyle)</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        middle?.cloneStyleFrom(leftTop)</span>
+<span class="fc" id="L46">        bottomRight.cloneStyleFrom(leftTop)</span>
+    }
+
+    @Override
+    abstract void applyStyle(BorderSide side, BorderStyle style)
+
+    @Override
+    void applyStyle(BorderStyle style) {
+<span class="fc" id="L54">        BorderSide.values().each { BorderSide side -&gt;</span>
+<span class="fc" id="L55">            applyStyle(side, style)</span>
+        }
+    }
+
+    @Override
+    abstract void applyColor(BorderSide side, XSSFColor color)
+
+    @Override
+    void applyColor(XSSFColor color) {
+<span class="fc" id="L64">        BorderSide.values().each { BorderSide side -&gt;</span>
+<span class="fc" id="L65">            applyColor(side, color)</span>
+        }
+    }
+
+    private void loopRows(Closure c) {
+<span class="fc" id="L70">        int start = range.firstRow</span>
+<span class="fc" id="L71">        int end = range.lastRow</span>
+<span class="fc bfc" id="L72" title="All 4 branches covered.">        for (int i = start; i &lt;= end; i++) {</span>
+<span class="fc bfc" id="L73" title="All 4 branches covered.">            c.call(CellUtil.getRow(i, sheet), i == start, i == end)</span>
+<span class="fc" id="L74">        }</span>
+    }
+
+    private void loopColumns(Row row, Closure c) {
+<span class="fc" id="L78">        int start = range.firstColumn</span>
+<span class="fc" id="L79">        int end = range.lastColumn</span>
+<span class="fc bfc" id="L80" title="All 4 branches covered.">        for (int i = start; i &lt;= end; i++) {</span>
+<span class="fc bfc" id="L81" title="All 4 branches covered.">            c.call(CellUtil.getCell(row, i), i == start, i == end)</span>
+<span class="fc" id="L82">        }</span>
+    }
+
+    void setStyles() {
+<span class="fc" id="L86">        loopRows { Row row, boolean firstRow, boolean lastRow -&gt;</span>
+<span class="fc" id="L87">            loopColumns(row) { Cell cell, boolean firstCol, boolean lastCol -&gt;</span>
+<span class="fc bfc" id="L88" title="All 6 branches covered.">                if (firstRow &amp;&amp; firstCol) {</span>
+<span class="fc" id="L89">                    cell.setCellStyle(leftTop)</span>
+<span class="pc bfc" id="L90" title="All 6 branches covered.">                } else if (lastRow &amp;&amp; lastCol) {</span>
+<span class="fc" id="L91">                    cell.setCellStyle(bottomRight)</span>
+<span class="nc" id="L92">                } else {</span>
+<span class="fc" id="L93">                    cell.setCellStyle(middle)</span>
+<span class="nc" id="L94">                }</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

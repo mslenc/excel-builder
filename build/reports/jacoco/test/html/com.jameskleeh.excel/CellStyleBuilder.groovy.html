@@ -1,0 +1,477 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CellStyleBuilder.groovy</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">excel-builder</a> &gt; <a href="index.source.html" class="el_package">com.jameskleeh.excel</a> &gt; <span class="el_source">CellStyleBuilder.groovy</span></div><h1>CellStyleBuilder.groovy</h1><pre class="source lang-java linenums">/*
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+&quot;License&quot;); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+&quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+*/
+package com.jameskleeh.excel
+
+import com.jameskleeh.excel.style.BorderStyleApplier
+import com.jameskleeh.excel.style.CellRangeBorderStyleApplier
+import com.jameskleeh.excel.style.CellStyleBorderStyleApplier
+import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
+import org.apache.poi.ss.usermodel.BorderStyle
+import org.apache.poi.ss.usermodel.FillPatternType
+import org.apache.poi.ss.usermodel.Font as FontType
+import org.apache.poi.ss.usermodel.HorizontalAlignment
+import org.apache.poi.ss.usermodel.VerticalAlignment
+import org.apache.poi.xssf.usermodel.XSSFCell
+import org.apache.poi.xssf.usermodel.XSSFCellStyle
+import org.apache.poi.xssf.usermodel.XSSFColor
+import org.apache.poi.xssf.usermodel.XSSFFont
+import org.apache.poi.xssf.usermodel.XSSFRow
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.apache.poi.xssf.usermodel.extensions.XSSFCellBorder.BorderSide
+
+import java.awt.*
+
+/**
+ * A class to build an {@link org.apache.poi.xssf.usermodel.XSSFCellStyle} from a map
+ *
+ * @author James Kleeh
+ * @since 0.1.0
+ */
+@CompileStatic
+class CellStyleBuilder {
+
+    private final XSSFWorkbook workbook
+    private final WorkbookCache workbookCache
+
+    protected static final String FORMAT = 'format'
+    protected static final String HIDDEN = 'hidden'
+    protected static final String LOCKED = 'locked'
+    protected static final String HORIZONTAL_ALIGNMENT = 'alignment'
+    protected static final String VERTICAL_ALIGNMENT = 'verticalAlignment'
+    protected static final String WRAPPED = 'wrapped'
+    protected static final String ROTATION = 'rotation'
+    protected static final String INDENT = 'indent'
+    protected static final String BORDER = 'border'
+    protected static final String LEFT = 'left'
+    protected static final String RIGHT = 'right'
+    protected static final String TOP = 'top'
+    protected static final String BOTTOM = 'bottom'
+    protected static final String COLOR = 'color'
+    protected static final String STYLE = 'style'
+    protected static final String FONT = 'font'
+    protected static final String FONT_BOLD = 'bold'
+    protected static final String FONT_ITALIC = 'italic'
+    protected static final String FONT_STRIKEOUT = 'strikeout'
+    protected static final String FONT_UNDERLINE = 'underline'
+    protected static final String FONT_COLOR = 'color'
+    protected static final String FONT_NAME = 'name'
+    protected static final String FONT_SIZE = 'size'
+    protected static final String FILL = 'fill'
+    protected static final String BACKGROUND_COLOR = 'backgroundColor'
+    protected static final String FOREGROUND_COLOR = 'foregroundColor'
+
+    CellStyleBuilder(XSSFWorkbook workbook) {
+<span class="fc" id="L81">        this.workbook = workbook</span>
+<span class="fc" id="L82">        workbookCache = new WorkbookCache(workbook)</span>
+    }
+
+    private static void convertBorderOptions(Map options, String key) {
+<span class="fc bfc" id="L86" title="All 6 branches covered.">        if (options.containsKey(key) &amp;&amp; options[key] instanceof BorderStyle) {</span>
+<span class="fc" id="L87">            BorderStyle border = (BorderStyle)options.remove(key)</span>
+<span class="fc" id="L88">            options.put(key, [style: border])</span>
+<span class="fc" id="L89">        }</span>
+    }
+
+    /**
+     *
+     * A method to convert global options into specific options.
+     * Example:
+     * [border: BorderStyle.THIN] would convert to
+     * [border: [style: BorderStyle.THIN, left: [style: BorderStyle.THIN], right: ...]]
+     *
+     * @param options A map of options
+     */
+     static void convertSimpleOptions(Map options) {
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (options) {</span>
+<span class="fc bfc" id="L103" title="All 6 branches covered.">            if (options.containsKey(BORDER) &amp;&amp; options[BORDER] instanceof BorderStyle) {</span>
+<span class="fc" id="L104">                BorderStyle border = (BorderStyle)options.remove(BORDER)</span>
+<span class="fc" id="L105">                options.put(BORDER, [style: border])</span>
+            }
+<span class="fc bfc" id="L107" title="All 6 branches covered.">            if (options.containsKey(FONT) &amp;&amp; options[FONT] instanceof Font) {</span>
+<span class="fc" id="L108">                Font font = (Font)options.remove(FONT)</span>
+<span class="fc" id="L109">                Map fontOptions = [:]</span>
+<span class="fc" id="L110">                fontOptions[FONT_BOLD] = (font == Font.BOLD)</span>
+<span class="fc" id="L111">                fontOptions[FONT_ITALIC] = (font == Font.ITALIC)</span>
+<span class="fc" id="L112">                fontOptions[FONT_STRIKEOUT] = (font == Font.STRIKEOUT)</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">                fontOptions[FONT_UNDERLINE] = (font == Font.UNDERLINE ? (byte)1 : (byte)0)</span>
+<span class="fc" id="L114">                options[FONT] = fontOptions</span>
+            }
+<span class="fc bfc" id="L116" title="All 2 branches covered.">            if (options.containsKey(BORDER)) {</span>
+<span class="fc" id="L117">                Map border = (Map)options[BORDER]</span>
+<span class="fc" id="L118">                convertBorderOptions(border, LEFT)</span>
+<span class="fc" id="L119">                convertBorderOptions(border, RIGHT)</span>
+<span class="fc" id="L120">                convertBorderOptions(border, TOP)</span>
+<span class="fc" id="L121">                convertBorderOptions(border, BOTTOM)</span>
+            }
+<span class="fc" id="L123">        }</span>
+    }
+
+    private void setFormat(XSSFCellStyle cellStyle, Object format) {
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (format instanceof Integer) {</span>
+<span class="fc" id="L128">            cellStyle.setDataFormat((Integer)format)</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        } else if (format instanceof String) {</span>
+<span class="fc" id="L130">            cellStyle.setDataFormat(workbook.creationHelper.createDataFormat().getFormat((String)format))</span>
+<span class="fc" id="L131">        } else {</span>
+<span class="fc" id="L132">            throw new IllegalArgumentException('The cell format must be an Integer or String')</span>
+<span class="fc" id="L133">        }</span>
+    }
+
+    private void setBooleanFont(Map options, String key, Closure callable) {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (options.containsKey(key)) {</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            if (options[key] instanceof Boolean) {</span>
+<span class="fc" id="L139">                callable.call((Boolean)options[key])</span>
+<span class="fc" id="L140">            } else {</span>
+<span class="fc" id="L141">                throw new IllegalArgumentException(&quot;[font: [$key: &lt;&gt;]] must be a boolean&quot;)</span>
+            }
+<span class="fc" id="L143">        }</span>
+    }
+
+    private void setFont(XSSFCellStyle cellStyle, Object fontOptions) {
+<span class="pc bpc" id="L147" title="2 of 4 branches missed.">        if (!workbookCache.containsFont(fontOptions)) {</span>
+<span class="fc" id="L148">            XSSFFont font = (XSSFFont) workbook.createFont()</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">            if (fontOptions instanceof Map) {</span>
+<span class="fc" id="L150">                Map fontMap = (Map)fontOptions</span>
+<span class="fc" id="L151">                setBooleanFont(fontMap, FONT_BOLD, font.&amp;setBold)</span>
+<span class="fc" id="L152">                setBooleanFont(fontMap, FONT_ITALIC, font.&amp;setItalic)</span>
+<span class="fc" id="L153">                setBooleanFont(fontMap, FONT_STRIKEOUT, font.&amp;setStrikeout)</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">                if (fontMap.containsKey(FONT_UNDERLINE)) {</span>
+<span class="fc" id="L155">                    Object underlineOption = fontMap[FONT_UNDERLINE]</span>
+<span class="fc" id="L156">                    byte underline</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                    if (underlineOption instanceof Byte) {</span>
+<span class="fc" id="L158">                        underline = (byte)underlineOption</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">                    } else if (underlineOption instanceof Boolean) {</span>
+<span class="fc" id="L160">                        underline = FontType.U_SINGLE</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">                    } else if (underlineOption instanceof String) {</span>
+<span class="fc" id="L162">                        switch (underlineOption) {</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">                            case 'single':</span>
+<span class="fc" id="L164">                                underline = FontType.U_SINGLE</span>
+<span class="fc" id="L165">                                break</span>
+<span class="pc bfc" id="L166" title="All 2 branches covered.">                            case 'singleAccounting':</span>
+<span class="fc" id="L167">                                underline = FontType.U_SINGLE_ACCOUNTING</span>
+<span class="fc" id="L168">                                break</span>
+<span class="pc bfc" id="L169" title="All 2 branches covered.">                            case 'double':</span>
+<span class="fc" id="L170">                                underline = FontType.U_DOUBLE</span>
+<span class="fc" id="L171">                                break</span>
+<span class="pc bfc" id="L172" title="All 2 branches covered.">                            case 'doubleAccounting':</span>
+<span class="fc" id="L173">                                underline = FontType.U_DOUBLE_ACCOUNTING</span>
+<span class="fc" id="L174">                                break</span>
+                            default:
+<span class="fc" id="L176">                                throw new IllegalArgumentException(&quot;[font: [${FONT_UNDERLINE}: ${fontMap[FONT_UNDERLINE]}]] is not a supported value&quot;)</span>
+                        }
+<span class="fc" id="L178">                    } else {</span>
+<span class="fc" id="L179">                        throw new IllegalArgumentException(&quot;[font: [${FONT_UNDERLINE}: &lt;&gt;]] must be a boolean or string&quot;)</span>
+                    }
+<span class="fc" id="L181">                    font.setUnderline(underline)</span>
+                }
+<span class="fc bfc" id="L183" title="All 2 branches covered.">                if (fontMap.containsKey(FONT_COLOR)) {</span>
+<span class="fc" id="L184">                    font.setColor(getColor(fontMap[FONT_COLOR]))</span>
+                }
+<span class="fc bfc" id="L186" title="All 2 branches covered.">                if (fontMap.containsKey(FONT_SIZE)) {</span>
+<span class="fc" id="L187">                    font.setFontHeight((Double)fontMap[FONT_SIZE])</span>
+                }
+<span class="fc bfc" id="L189" title="All 2 branches covered.">                if (fontMap.containsKey(FONT_NAME)) {</span>
+<span class="fc" id="L190">                    font.setFontName((String)fontMap[FONT_NAME])</span>
+                }
+<span class="fc" id="L192">            } else {</span>
+<span class="fc" id="L193">                throw new IllegalArgumentException('The font option must be an instance of a Map')</span>
+            }
+<span class="fc" id="L195">            workbookCache.putFont(fontOptions, font)</span>
+        }
+
+<span class="fc" id="L198">        cellStyle.setFont(workbookCache.getFont(fontOptions))</span>
+    }
+
+    private XSSFColor getColor(Object obj) {
+<span class="fc" id="L202">        Color color</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        if (obj instanceof Color) {</span>
+<span class="fc" id="L204">            color = (Color)obj</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">        } else if (obj instanceof String) {</span>
+<span class="fc" id="L206">            String hex = (String)obj</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            if (hex.startsWith('#')) {</span>
+<span class="fc" id="L208">                color = Color.decode(hex)</span>
+<span class="fc" id="L209">            } else {</span>
+<span class="fc" id="L210">                color = Color.decode(&quot;#$obj&quot;)</span>
+            }
+<span class="fc" id="L212">        } else {</span>
+<span class="fc" id="L213">            throw new IllegalArgumentException(&quot;${obj} must be an instance of ${Color.canonicalName} or a hex ${String.canonicalName}&quot;)</span>
+        }
+<span class="fc" id="L215">        new XSSFColor(color, workbookCache.colorMap)</span>
+    }
+
+    @SuppressWarnings('UnnecessaryGetter')
+    private BorderStyle getBorderStyle(Object obj) {
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        if (obj instanceof BorderStyle) {</span>
+<span class="fc" id="L221">            return (BorderStyle)obj</span>
+        }
+
+<span class="fc" id="L224">        throw new IllegalArgumentException(&quot;The border style must be an instance of ${BorderStyle.getCanonicalName()}&quot;)</span>
+    }
+
+    private void setBorder(Map border, BorderSide side, BorderStyleApplier styleApplier) {
+<span class="fc" id="L228">        final String KEY = side.name().toLowerCase()</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        if (border.containsKey(KEY)) {</span>
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">            if (border[KEY] instanceof Map) {</span>
+<span class="fc" id="L231">                Map edge = (Map) border[KEY]</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">                if (edge.containsKey(COLOR)) {</span>
+<span class="fc" id="L233">                    styleApplier.applyColor(side, getColor(edge[COLOR]))</span>
+                }
+<span class="fc bfc" id="L235" title="All 2 branches covered.">                if (edge.containsKey(STYLE)) {</span>
+<span class="fc" id="L236">                    styleApplier.applyStyle(side, getBorderStyle(edge[STYLE]))</span>
+                }
+<span class="fc" id="L238">            } else {</span>
+<span class="nc" id="L239">                styleApplier.applyStyle(side, getBorderStyle(border[KEY]))</span>
+            }
+<span class="fc" id="L241">        }</span>
+    }
+
+    @SuppressWarnings('UnnecessaryGetter')
+    private void setHorizontalAlignment(XSSFCellStyle cellStyle, Object horizontalAlignment) {
+<span class="fc" id="L246">        HorizontalAlignment hAlign</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">        if (horizontalAlignment instanceof HorizontalAlignment) {</span>
+<span class="fc" id="L248">            hAlign = (HorizontalAlignment)horizontalAlignment</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">        } else if (horizontalAlignment instanceof String) {</span>
+<span class="fc" id="L250">            hAlign = HorizontalAlignment.valueOf(((String)horizontalAlignment).toUpperCase())</span>
+        }
+
+<span class="fc bfc" id="L253" title="All 4 branches covered.">        if (hAlign != null) {</span>
+<span class="fc" id="L254">            cellStyle.setAlignment(hAlign)</span>
+<span class="fc" id="L255">        } else {</span>
+<span class="fc" id="L256">            throw new IllegalArgumentException(&quot;The horizontal alignment must be an instance of ${HorizontalAlignment.getCanonicalName()}&quot;)</span>
+<span class="fc" id="L257">        }</span>
+    }
+
+    @SuppressWarnings('UnnecessaryGetter')
+    private void setVerticalAlignment(XSSFCellStyle cellStyle, Object verticalAlignment) {
+<span class="fc" id="L262">        VerticalAlignment vAlign</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        if (verticalAlignment instanceof VerticalAlignment) {</span>
+<span class="fc" id="L264">            vAlign = (VerticalAlignment) verticalAlignment</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">        } else if (verticalAlignment instanceof String) {</span>
+<span class="fc" id="L266">            vAlign = VerticalAlignment.valueOf(((String)verticalAlignment).toUpperCase())</span>
+        }
+
+<span class="fc bfc" id="L269" title="All 4 branches covered.">        if (vAlign != null) {</span>
+<span class="fc" id="L270">            cellStyle.setVerticalAlignment(vAlign)</span>
+<span class="fc" id="L271">        } else {</span>
+<span class="fc" id="L272">            throw new IllegalArgumentException(&quot;The vertical alignment must be an instance of ${VerticalAlignment.getCanonicalName()}&quot;)</span>
+<span class="fc" id="L273">        }</span>
+    }
+
+    private void setWrapped(XSSFCellStyle cellStyle, Object wrapped) {
+<span class="fc bfc" id="L277" title="All 2 branches covered.">        if (wrapped instanceof Boolean) {</span>
+<span class="fc" id="L278">            cellStyle.setWrapText((Boolean)wrapped)</span>
+<span class="fc" id="L279">        } else {</span>
+<span class="fc" id="L280">            throw new IllegalArgumentException(&quot;The wrapped option must be an instance of ${Boolean.canonicalName}&quot;)</span>
+<span class="fc" id="L281">        }</span>
+    }
+
+    private void setLocked(XSSFCellStyle cellStyle, Object locked) {
+<span class="fc bfc" id="L285" title="All 2 branches covered.">        if (locked instanceof Boolean) {</span>
+<span class="fc" id="L286">            cellStyle.setLocked((Boolean)locked)</span>
+<span class="fc" id="L287">        } else {</span>
+<span class="fc" id="L288">            throw new IllegalArgumentException(&quot;The wrapped option must be an instance of ${Boolean.canonicalName}&quot;)</span>
+<span class="fc" id="L289">        }</span>
+    }
+
+    private void setHidden(XSSFCellStyle cellStyle, Object hidden) {
+<span class="fc bfc" id="L293" title="All 2 branches covered.">        if (hidden instanceof Boolean) {</span>
+<span class="fc" id="L294">            cellStyle.setHidden((Boolean)hidden)</span>
+<span class="fc" id="L295">        } else {</span>
+<span class="fc" id="L296">            throw new IllegalArgumentException(&quot;The wrapped option must be an instance of ${Boolean.canonicalName}&quot;)</span>
+<span class="fc" id="L297">        }</span>
+    }
+
+    private void setBorder(BorderStyleApplier styleApplier, Map border) {
+<span class="pc bpc" id="L301" title="1 of 2 branches missed.">        if (border.containsKey(STYLE)) {</span>
+<span class="fc" id="L302">            BorderStyle style = getBorderStyle(border[STYLE])</span>
+<span class="fc" id="L303">            styleApplier.applyStyle(style)</span>
+        }
+<span class="fc bfc" id="L305" title="All 2 branches covered.">        if (border.containsKey(COLOR)) {</span>
+<span class="fc" id="L306">            XSSFColor color = getColor(border[COLOR])</span>
+<span class="fc" id="L307">            styleApplier.applyColor(color)</span>
+        }
+<span class="fc" id="L309">        setBorder(border, BorderSide.LEFT, styleApplier)</span>
+<span class="fc" id="L310">        setBorder(border, BorderSide.RIGHT, styleApplier)</span>
+<span class="fc" id="L311">        setBorder(border, BorderSide.BOTTOM, styleApplier)</span>
+<span class="fc" id="L312">        setBorder(border, BorderSide.TOP, styleApplier)</span>
+    }
+
+    private void setFill(XSSFCellStyle cellStyle, Object fill) {
+<span class="fc" id="L316">        FillPatternType fillPattern</span>
+<span class="fc bfc" id="L317" title="All 2 branches covered.">        if (fill instanceof FillPatternType) {</span>
+<span class="fc" id="L318">            fillPattern = (FillPatternType) fill</span>
+<span class="fc bfc" id="L319" title="All 2 branches covered.">        } else if (fill instanceof String) {</span>
+<span class="fc" id="L320">            fillPattern = FillPatternType.valueOf(((String)fill).toUpperCase())</span>
+        }
+
+<span class="fc bfc" id="L323" title="All 4 branches covered.">        if (fillPattern != null) {</span>
+<span class="fc" id="L324">            cellStyle.setFillPattern(fillPattern)</span>
+<span class="fc" id="L325">        } else {</span>
+<span class="fc" id="L326">            throw new IllegalArgumentException(&quot;The fill pattern must be an instance of ${Short.canonicalName}&quot;)</span>
+<span class="fc" id="L327">        }</span>
+    }
+
+    private void setForegroundColor(XSSFCellStyle cellStyle, Object foregroundColor) {
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">        if (cellStyle.fillPattern == FillPatternType.NO_FILL) {</span>
+<span class="fc" id="L332">            cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND)</span>
+        }
+<span class="fc" id="L334">        cellStyle.setFillForegroundColor(getColor(foregroundColor))</span>
+    }
+
+    private void setBackgroundColor(XSSFCellStyle cellStyle, Object backgroundColor) {
+<span class="fc bfc" id="L338" title="All 2 branches covered.">        if (cellStyle.fillPattern == FillPatternType.NO_FILL) {</span>
+<span class="fc" id="L339">            setForegroundColor(cellStyle, backgroundColor)</span>
+<span class="fc" id="L340">        } else {</span>
+<span class="fc" id="L341">            cellStyle.setFillBackgroundColor(getColor(backgroundColor))</span>
+<span class="fc" id="L342">        }</span>
+    }
+
+    /**
+     * A method to build a style object based on a map of parameters
+     *
+     * @param value The data being rendered with the style
+     * @param options A map of options to configure the style
+     * @return A cell style to apply
+     */
+    XSSFCellStyle buildStyle(Object value, Map options) {
+<span class="fc" id="L353">        XSSFCellStyle cellStyle = (XSSFCellStyle) workbook.createCellStyle()</span>
+<span class="fc bfc" id="L354" title="All 2 branches covered.">        if (options.containsKey(FORMAT)) {</span>
+<span class="fc" id="L355">            setFormat(cellStyle, options[FORMAT])</span>
+        }
+<span class="fc bfc" id="L357" title="All 2 branches covered.">        if (options.containsKey(FONT)) {</span>
+<span class="fc" id="L358">            setFont(cellStyle, options[FONT])</span>
+        }
+<span class="fc bfc" id="L360" title="All 2 branches covered.">        if (options.containsKey(HIDDEN)) {</span>
+<span class="fc" id="L361">            setHidden(cellStyle, options[HIDDEN])</span>
+        }
+<span class="fc bfc" id="L363" title="All 2 branches covered.">        if (options.containsKey(LOCKED)) {</span>
+<span class="fc" id="L364">            setLocked(cellStyle, options[LOCKED])</span>
+        }
+<span class="fc bfc" id="L366" title="All 2 branches covered.">        if (options.containsKey(WRAPPED)) {</span>
+<span class="fc" id="L367">            setWrapped(cellStyle, options[WRAPPED])</span>
+        }
+<span class="fc bfc" id="L369" title="All 2 branches covered.">        if (options.containsKey(HORIZONTAL_ALIGNMENT)) {</span>
+<span class="fc" id="L370">            setHorizontalAlignment(cellStyle, options[HORIZONTAL_ALIGNMENT])</span>
+        }
+<span class="fc bfc" id="L372" title="All 2 branches covered.">        if (options.containsKey(VERTICAL_ALIGNMENT)) {</span>
+<span class="fc" id="L373">            setVerticalAlignment(cellStyle, options[VERTICAL_ALIGNMENT])</span>
+        }
+<span class="fc bfc" id="L375" title="All 2 branches covered.">        if (options.containsKey(ROTATION)) {</span>
+<span class="fc" id="L376">            cellStyle.setRotation((short) options[ROTATION])</span>
+        }
+<span class="fc bfc" id="L378" title="All 2 branches covered.">        if (options.containsKey(INDENT)) {</span>
+<span class="fc" id="L379">            cellStyle.setIndention((short) options[INDENT])</span>
+        }
+<span class="fc bfc" id="L381" title="All 2 branches covered.">        if (options.containsKey(BORDER)) {</span>
+<span class="fc" id="L382">            setBorder(new CellStyleBorderStyleApplier(cellStyle), (Map)options[BORDER])</span>
+        }
+<span class="fc bfc" id="L384" title="All 2 branches covered.">        if (options.containsKey(FILL)) {</span>
+<span class="fc" id="L385">            setFill(cellStyle, options[FILL])</span>
+        }
+<span class="fc bfc" id="L387" title="All 2 branches covered.">        if (options.containsKey(FOREGROUND_COLOR)) {</span>
+<span class="fc" id="L388">            setForegroundColor(cellStyle, options[FOREGROUND_COLOR])</span>
+        }
+<span class="fc bfc" id="L390" title="All 2 branches covered.">        if (options.containsKey(BACKGROUND_COLOR)) {</span>
+<span class="fc" id="L391">            setBackgroundColor(cellStyle, options[BACKGROUND_COLOR])</span>
+        }
+<span class="fc" id="L393">        cellStyle</span>
+    }
+
+    private XSSFCellStyle getStyle(Object value, Map options, Map defaultOptions = null) {
+<span class="fc" id="L397">        convertSimpleOptions(options)</span>
+<span class="fc" id="L398">        convertSimpleOptions(defaultOptions)</span>
+<span class="fc" id="L399">        options = merge(defaultOptions, options)</span>
+<span class="pc bpc" id="L400" title="2 of 10 branches missed.">        if (!options.containsKey(FORMAT) &amp;&amp; value != null) {</span>
+<span class="fc" id="L401">            Object format = Excel.getFormat(value.class)</span>
+<span class="fc bfc" id="L402" title="All 4 branches covered.">            if (format != null) {</span>
+<span class="fc" id="L403">                options.put(FORMAT, format)</span>
+            }
+        }
+<span class="fc bfc" id="L406" title="All 2 branches covered.">        if (options) {</span>
+<span class="pc bpc" id="L407" title="1 of 4 branches missed.">            if (workbookCache.containsStyle(options)) {</span>
+<span class="fc" id="L408">                workbookCache.getStyle(options)</span>
+<span class="nc" id="L409">            } else {</span>
+<span class="fc" id="L410">                XSSFCellStyle style = buildStyle(value, options)</span>
+<span class="fc" id="L411">                workbookCache.putStyle(options, style)</span>
+<span class="fc" id="L412">                style</span>
+            }
+<span class="nc" id="L414">        } else {</span>
+<span class="fc" id="L415">            null</span>
+<span class="nc" id="L416">        }</span>
+    }
+
+    /**
+     * A method to set a style to a cell based on a map of options and a map of default options
+     *
+     * @param value The data to be rendered to the cell
+     * @param cell The cell to apply the styling to
+     * @param _options A map of options for styling
+     * @param defaultOptions A map of default options for styling
+     */
+     void setStyle(Object value, XSSFCell cell, Map options, Map defaultOptions = null) {
+<span class="fc" id="L428">         XSSFCellStyle cellStyle = getStyle(value, options, defaultOptions)</span>
+<span class="fc bfc" id="L429" title="All 4 branches covered.">         if (cellStyle != null) {</span>
+<span class="fc" id="L430">             cell.cellStyle = cellStyle</span>
+<span class="fc" id="L431">         }</span>
+    }
+
+    /**
+     * A method to set a style to a row based on a map of options and a map of default options
+     *
+     * @param row The row to apply the styling to
+     * @param _options A map of options for styling
+     * @param defaultOptions A map of default options for styling
+     */
+    void setStyle(XSSFRow row, Map options, Map defaultOptions = null) {
+<span class="nc" id="L442">        XSSFCellStyle cellStyle = getStyle(null, options, defaultOptions)</span>
+<span class="nc bnc" id="L443" title="All 4 branches missed.">        if (cellStyle != null) {</span>
+<span class="nc" id="L444">            row.setRowStyle(cellStyle)</span>
+<span class="nc" id="L445">        }</span>
+    }
+
+    /**
+     * Merges multiple maps
+     *
+     * @param sources The maps to merge
+     * @return The merged map
+     */
+    @CompileStatic(TypeCheckingMode.SKIP)
+    Map merge(Map[] sources) {
+<span class="pc bpc" id="L456" title="1 of 2 branches missed.">        if (sources.length == 0) {</span>
+<span class="nc" id="L457">            return [:]</span>
+        }
+<span class="pc bpc" id="L459" title="7 of 12 branches missed.">        if (sources.length == 1) {</span>
+<span class="nc" id="L460">            return sources[0]</span>
+<span class="nc" id="L461">        }</span>
+
+<span class="fc" id="L463">        (Map)sources.inject([:]) { result, source -&gt;</span>
+<span class="fc" id="L464">            source.each { k, v -&gt;</span>
+<span class="fc bfc" id="L465" title="All 2 branches covered.">                result[k] = result[k] instanceof Map ? merge((Map)result[k], (Map)v) : v</span>
+            }
+<span class="fc" id="L467">            result</span>
+        }
+    }
+
+    void applyBorderToRegion(CellRangeBorderStyleApplier borderStyleApplier, Map border) {
+<span class="fc" id="L472">        setBorder(borderStyleApplier, border)</span>
+<span class="fc" id="L473">        borderStyleApplier.setStyles()</span>
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

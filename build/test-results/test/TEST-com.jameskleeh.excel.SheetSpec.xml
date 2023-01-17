@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jameskleeh.excel.SheetSpec" tests="3" skipped="0" failures="0" errors="0" timestamp="2023-01-17T16:27:35" hostname="ansible-nas" time="0.009">
+  <properties/>
+  <testcase name="test skipRows" classname="com.jameskleeh.excel.SheetSpec" time="0.003"/>
+  <testcase name="test row(Object...)" classname="com.jameskleeh.excel.SheetSpec" time="0.003"/>
+  <testcase name="test row(Map options)" classname="com.jameskleeh.excel.SheetSpec" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

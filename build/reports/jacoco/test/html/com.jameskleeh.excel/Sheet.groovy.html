@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Sheet.groovy</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">excel-builder</a> &gt; <a href="index.source.html" class="el_package">com.jameskleeh.excel</a> &gt; <span class="el_source">Sheet.groovy</span></div><h1>Sheet.groovy</h1><pre class="source lang-java linenums">/*
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+&quot;License&quot;); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+&quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+*/
+package com.jameskleeh.excel
+
+import groovy.transform.CompileStatic
+import org.apache.poi.xssf.usermodel.XSSFRow
+import org.apache.poi.xssf.usermodel.XSSFSheet
+
+/**
+ * A class used to create a sheet in an excel document
+ *
+ * @author James Kleeh
+ * @since 0.1.0
+ */
+@CompileStatic
+class Sheet {
+
+    private final XSSFSheet sheet
+    private int rowIdx
+    private int columnIdx
+    private Map defaultOptions
+    private Map&lt;Object, Integer&gt; columnIndexes = [:]
+    private final CellStyleBuilder styleBuilder
+
+    private static final String HEIGHT = 'height'
+    private static final String WIDTH = 'width'
+
+    Sheet(XSSFSheet sheet, CellStyleBuilder styleBuilder) {
+<span class="fc" id="L45">        this.sheet = sheet</span>
+<span class="fc" id="L46">        this.rowIdx = 0</span>
+<span class="fc" id="L47">        this.columnIdx = 0</span>
+<span class="fc" id="L48">        this.styleBuilder = styleBuilder</span>
+    }
+
+    /**
+     * Sets the default styling for the sheet
+     *
+     * @param options Style options
+     */
+    void defaultStyle(Map options) {
+<span class="fc" id="L57">        options = new LinkedHashMap(options)</span>
+<span class="fc" id="L58">        styleBuilder.convertSimpleOptions(options)</span>
+<span class="fc" id="L59">        defaultOptions = options</span>
+    }
+
+    /**
+     * Skips rows
+     * @param num The number of rows to skip
+     */
+    void skipRows(int num) {
+<span class="fc" id="L67">        rowIdx += num</span>
+    }
+
+    /**
+     * Skips columns
+     * @param num The number of columns to skip
+     */
+    void skipColumns(int num) {
+<span class="nc" id="L75">        columnIdx += num</span>
+    }
+
+    /**
+     * Used to define headers for a sheet
+     *
+     * @param callable To build header data
+     */
+    void columns(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Row) Closure callable) {
+<span class="fc" id="L84">        row(callable)</span>
+    }
+
+    /**
+     * Used to define headers for a sheet
+     *
+     * @param options Default style options for the header
+     * @param callable To build header data
+     */
+    void columns(Map options, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Row) Closure callable) {
+<span class="nc" id="L94">        row(options, callable)</span>
+    }
+
+    /**
+     * Output data by column
+     *
+     * @param callable To build column data
+     */
+    void column(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Column) Closure callable) {
+<span class="fc" id="L103">        callable.resolveStrategy = Closure.DELEGATE_FIRST</span>
+<span class="fc" id="L104">        callable.delegate = new Column(sheet, defaultOptions, columnIndexes, styleBuilder, columnIdx, rowIdx)</span>
+<span class="fc" id="L105">        callable.call()</span>
+<span class="fc" id="L106">        columnIdx++</span>
+    }
+
+    /**
+     * Output data by column
+     *
+     * @param callable To build column data
+     */
+    void column(Map options, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Column) Closure callable) {
+<span class="nc bnc" id="L115" title="All 6 branches missed.">        if (options?.containsKey(WIDTH)) {</span>
+<span class="nc" id="L116">            Object width = options[WIDTH]</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">            if (width instanceof Integer) {</span>
+<span class="nc" id="L118">                sheet.setColumnWidth(columnIdx, (Integer)width)</span>
+<span class="nc" id="L119">            } else {</span>
+<span class="nc" id="L120">                throw new IllegalArgumentException('Column width must be an integer')</span>
+            }
+        }
+<span class="nc" id="L123">        column(callable)</span>
+    }
+
+    /**
+     * Skip to a previously defined column created by {@link #column}
+     *
+     * @param id The column identifier
+     */
+    void skipTo(Object id) {
+<span class="nc bnc" id="L132" title="All 6 branches missed.">        if (columnIndexes &amp;&amp; columnIndexes.containsKey(id)) {</span>
+<span class="nc" id="L133">            columnIdx = columnIndexes[id]</span>
+<span class="nc" id="L134">        } else {</span>
+<span class="nc" id="L135">            throw new IllegalArgumentException(&quot;Column index not specified for $id&quot;)</span>
+<span class="nc" id="L136">        }</span>
+    }
+
+    /**
+     * Creates a row
+     *
+     * @return The native row
+     */
+    XSSFRow row() {
+<span class="fc" id="L145">        row([:], null)</span>
+    }
+
+    /**
+     * Creates a row
+     *
+     * @param cells A list of data to output as cells
+     * @return The native row
+     */
+    XSSFRow row(Object...cells) {
+<span class="fc" id="L155">        row {</span>
+<span class="fc" id="L156">            cells.each { val -&gt;</span>
+<span class="fc" id="L157">                cell(val)</span>
+            }
+        }
+    }
+
+    /**
+     * Creates a row
+     *
+     * @param callable To build row data
+     * @return The native row
+     */
+    XSSFRow row(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Row) Closure callable) {
+<span class="fc" id="L169">        row([:], callable)</span>
+    }
+
+    /**
+     * Creates a row
+     *
+     * @param options Default styling options
+     * @param callable To build row data
+     * @return The native row
+     */
+    XSSFRow row(Map options, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Row) Closure callable) {
+<span class="fc" id="L180">        XSSFRow row = sheet.createRow(rowIdx)</span>
+<span class="pc bpc" id="L181" title="2 of 6 branches missed.">        if (options?.containsKey(HEIGHT)) {</span>
+<span class="fc" id="L182">            Object height = options[HEIGHT]</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">            if (height instanceof Short) {</span>
+<span class="nc" id="L184">                row.setHeight((Short)height)</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">            } else if (height instanceof Float) {</span>
+<span class="fc" id="L186">                row.setHeightInPoints((Float)height)</span>
+<span class="fc" id="L187">            } else {</span>
+<span class="nc" id="L188">                throw new IllegalArgumentException('Row height must be a short or float')</span>
+            }
+        }
+
+<span class="fc bfc" id="L192" title="All 4 branches covered.">        if (callable != null) {</span>
+<span class="fc" id="L193">            callable.resolveStrategy = Closure.DELEGATE_FIRST</span>
+<span class="fc" id="L194">            callable.delegate = new Row(row, defaultOptions, columnIndexes, styleBuilder)</span>
+<span class="pc bpc" id="L195" title="2 of 4 branches missed.">            if (callable.maximumNumberOfParameters == 1) {</span>
+<span class="fc" id="L196">                callable.call(row)</span>
+<span class="fc" id="L197">            } else {</span>
+<span class="nc" id="L198">                callable.call()</span>
+            }
+        }
+<span class="fc" id="L201">        rowIdx++</span>
+<span class="fc" id="L202">        row</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

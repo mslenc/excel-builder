@@ -1,0 +1,190 @@
+plugins {
+    id "com.jfrog.bintray" version "1.8.4"
+    id 'org.asciidoctor.gradle.asciidoctor' version '1.5.1'
+    id "nebula.provided-base" version "3.1.0"
+    id 'org.ajoberstar.git-publish' version '2.1.1'
+    id "com.jfrog.artifactory" version "4.9.8"
+}
+
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'codenarc'
+apply plugin: "jacoco"
+
+
+group 'com.github.mslenc'
+version '1.1.0'
+
+targetCompatibility = 1.8
+sourceCompatibility = 1.8
+
+configurations {
+    documentation
+}
+
+repositories {
+    mavenLocal()
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    provided 'org.codehaus.groovy:groovy:2.5.14'
+    documentation 'org.codehaus.groovy:groovy-templates:2.5.8'
+    compile "org.apache.poi:poi-ooxml:5.2.3"
+    codenarc 'org.codenarc:CodeNarc:1.4'
+    testCompile 'org.codehaus.groovy:groovy-dateutil:2.5.8'
+    testCompile 'org.spockframework:spock-core:1.2-groovy-2.5'
+    testRuntime "org.slf4j:slf4j-api:1.7.10"
+}
+
+project.ext {
+    githubUrl = 'https://github.com/jameskleeh/groovy-excel-builder'
+    artifactId = 'excel-builder'
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: groovydoc) {
+    classifier = 'javadoc'
+    from 'build/docs/groovydoc'
+}
+
+configure([groovydoc]) {
+    classpath += configurations.documentation
+}
+
+bintray {
+    user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv("BINTRAY_USER")
+    key = project.hasProperty('bintrayKey') ? project.property('bintrayKey') : System.getenv('BINTRAY_KEY')
+    publications = ['maven']
+    pkg {
+        repo = 'com.jameskleeh'
+        name = 'excel-builder'
+        licenses = ['Apache-2.0']
+        vcsUrl = project.githubUrl
+        publish = true
+        version {
+            mavenCentralSync {
+                user = project.hasProperty('mavenUser') ? project.property('mavenUser') : System.getenv("MAVEN_USER")
+                password = project.hasProperty('mavenPassword') ? project.property('mavenPassword') : System.getenv("MAVEN_PASSWORD")
+            }
+        }
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId project.artifactId
+            pom.withXml {
+                asNode().children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+                    name project.artifactId
+                    description project.description
+                    url project.githubUrl
+                    scm {
+                        url project.githubUrl
+                        connection "scm:${project.githubUrl}.git"
+                        developerConnection "scm:${project.githubUrl}.git"
+                    }
+                    licenses {
+                        license {
+                            name 'Apache License, Version 2.0'
+                            url 'https://www.apache.org/licenses/LICENSE-2.0'
+                            distribution 'repo'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id 'jameskleeh'
+                            name 'James Kleeh'
+                            email 'james.kleeh@gmail.com'
+                        }
+                    }
+                }
+            }
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+        }
+    }
+}
+
+artifactory {
+    contextUrl = 'http://oss.jfrog.org'
+    publish {
+        repository {
+            repoKey = 'oss-snapshot-local'
+            username = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv("BINTRAY_USER")
+            password = project.hasProperty('bintrayKey') ? project.property('bintrayKey') : System.getenv('BINTRAY_KEY')
+        }
+        defaults {
+            publications('maven')
+        }
+    }
+}
+
+asciidoctor {
+    sourceDir = file('docs')
+
+    resources {
+        from(sourceDir) {
+            include 'css/**', 'images/**'
+        }
+    }
+
+    attributes 'source-highlighter': 'coderay',
+               'docinfo1': ['version': project.version],
+               'imagesdir': './images',
+               'stylesdir': 'css',
+               'icons': 'font',
+               'toc': 'left',
+               'version': project.version,
+               'groupId': project.group,
+               'artifactId': project.name,
+               'sourcedir': "${projectDir}/src/main/groovy",
+               'poiApiUrl': 'https://poi.apache.org/apidocs/',
+               'apachePoi': 'https://poi.apache.org/',
+               'projectUrl': project.githubUrl
+}
+
+task docs(type:Copy, dependsOn:[groovydoc, asciidoctor])  {
+    from "$buildDir/asciidoc/html5"
+    into "$buildDir/docs"
+}
+
+gitPublish {
+
+    repoUri = "${project.githubUrl}.git".toString()
+
+    branch = 'gh-pages'
+
+    contents {
+        from("build/docs") {
+            into "1.0"
+        }
+    }
+
+    preserve {
+        include "0.4/**"
+    }
+
+    commitMessage = 'Publish documentation'
+}
+
+gitPublishPush.dependsOn docs
+
+codenarc {
+    toolVersion = '1.4'
+    configFile = file("${rootProject.projectDir}/config/codenarc/rules.groovy")
+}
+
+test {
+    finalizedBy jacocoTestReport
+}

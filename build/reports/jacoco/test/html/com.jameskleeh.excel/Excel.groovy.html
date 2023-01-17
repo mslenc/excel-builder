@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Excel.groovy</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">excel-builder</a> &gt; <a href="index.source.html" class="el_package">com.jameskleeh.excel</a> &gt; <span class="el_source">Excel.groovy</span></div><h1>Excel.groovy</h1><pre class="source lang-java linenums">/*
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+&quot;License&quot;); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+&quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+*/
+package com.jameskleeh.excel
+
+import groovy.transform.CompileStatic
+import org.apache.poi.ss.usermodel.BuiltinFormats
+
+import java.util.concurrent.atomic.AtomicInteger
+
+/**
+ * A class to store cell renderers and formatters used to set cell
+ * data and format
+ *
+ * @author James Kleeh
+ * @since 0.1.0
+ */
+@CompileStatic
+class Excel {
+
+<span class="fc" id="L36">    protected static SortedSet&lt;Entry&gt; rendererEntries = [] as SortedSet</span>
+<span class="fc" id="L37">    protected static SortedSet&lt;FormatEntry&gt; formatEntries = [] as SortedSet</span>
+
+<span class="fc" id="L39">    protected static final AtomicInteger RENDERER_SEQUENCE = new AtomicInteger(0)</span>
+<span class="fc" id="L40">    protected static final AtomicInteger FORMAT_SEQUENCE = new AtomicInteger(0)</span>
+
+    static {
+<span class="fc" id="L43">        registerCellFormat(BigDecimal, 8)</span>
+<span class="fc" id="L44">        registerCellFormat(Double, 4)</span>
+<span class="fc" id="L45">        registerCellFormat(Float, 4)</span>
+<span class="fc" id="L46">        registerCellFormat(Integer, 3)</span>
+<span class="fc" id="L47">        registerCellFormat(Long, 3)</span>
+<span class="fc" id="L48">        registerCellFormat(Short, 3)</span>
+<span class="fc" id="L49">        registerCellFormat(BigInteger, 3)</span>
+<span class="fc" id="L50">        registerCellFormat(Date, 'm/d/yyyy')</span>
+<span class="fc" id="L51">    }</span>
+
+    /**
+     * Registers a cell renderer. What is returned from the closure will be set to the cell value
+     *
+     * @param clazz The class to render
+     * @param priority The priority
+     * @param callable The closure to call
+     */
+    static void registerCellRenderer(Class clazz, Integer priority, Closure callable) {
+<span class="fc" id="L61">        rendererEntries.add(new Entry(clazz, callable, priority))</span>
+    }
+
+    /**
+     * Registers a cell renderer. What is returned from the closure will be set to the cell value
+     *
+     * @param clazz The class to render
+     * @param callable The closure to call
+     */
+    static void registerCellRenderer(Class clazz, Closure callable) {
+<span class="fc" id="L71">        registerCellRenderer(clazz, -1, callable)</span>
+    }
+
+    /**
+     * Registers a cell format
+     *
+     * @param clazz The class to render
+     * @param priority The priority
+     * @param format The format to apply
+     */
+    static void registerCellFormat(Class clazz, Integer priority, String format) {
+<span class="fc" id="L82">        int builtInFormat = BuiltinFormats.getBuiltinFormat(format)</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (builtInFormat &gt; -1) {</span>
+<span class="fc" id="L84">            registerCellFormat(clazz, priority, builtInFormat)</span>
+<span class="fc" id="L85">        } else {</span>
+<span class="fc" id="L86">            formatEntries.add(new FormatEntry(clazz, format, priority))</span>
+<span class="fc" id="L87">        }</span>
+    }
+
+    /**
+     * Registers a cell format
+     *
+     * @param clazz The class to render
+     * @param format The format to apply
+     */
+    static void registerCellFormat(Class clazz, String format) {
+<span class="fc" id="L97">        registerCellFormat(clazz, -1, format)</span>
+    }
+
+    /**
+     * Registers a cell format
+     *
+     * @param clazz The class to render
+     * @param priority The priority
+     * @param format The format to apply
+     */
+    static void registerCellFormat(Class clazz, Integer priority, int format) {
+<span class="fc" id="L108">        formatEntries.add(new FormatEntry(clazz, format, priority))</span>
+    }
+
+    /**
+     * Registers a cell format
+     *
+     * @param clazz The class to render
+     * @param format The format to apply
+     */
+    static void registerCellFormat(Class clazz, int format) {
+<span class="fc" id="L118">        registerCellFormat(clazz, -1, format)</span>
+    }
+
+    /**
+     * Queries the renderers registered
+     *
+     * @param clazz The class to search for
+     * @return The renderer. Null if not found
+     */
+    static Closure getRenderer(Class clazz) {
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        for (Entry entry : rendererEntries) {</span>
+<span class="fc bfc" id="L129" title="All 6 branches covered.">            if (entry.clazz == clazz || entry.clazz.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L130">                return entry.renderer</span>
+            }
+<span class="fc" id="L132">        }</span>
+<span class="fc" id="L133">        null</span>
+    }
+
+    /**
+     * Queries the formats registered
+     *
+     * @param clazz The class to search for
+     * @return The format. Null if not found
+     */
+    static Object getFormat(Class clazz) {
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        for (FormatEntry entry : formatEntries) {</span>
+<span class="fc bfc" id="L144" title="All 6 branches covered.">            if (entry.clazz == clazz || entry.clazz.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L145">                return entry.format</span>
+            }
+<span class="fc" id="L147">        }</span>
+<span class="fc" id="L148">        null</span>
+    }
+
+    private static class Entry implements Comparable&lt;Entry&gt; {
+        protected final Closure renderer
+        protected final Class clazz
+        private final int priority
+        private final int seq
+
+        Entry(Class clazz, Closure renderer, int priority) {
+<span class="fc" id="L158">            this.clazz = clazz</span>
+<span class="fc" id="L159">            this.renderer = renderer</span>
+<span class="fc" id="L160">            this.priority = priority</span>
+<span class="fc" id="L161">            seq = RENDERER_SEQUENCE.incrementAndGet()</span>
+        }
+
+        int compareTo(Entry entry) {
+<span class="fc bfc" id="L165" title="All 4 branches covered.">            priority == entry.priority ? entry.seq - seq : entry.priority - priority</span>
+        }
+    }
+
+    private static class FormatEntry implements Comparable&lt;FormatEntry&gt; {
+        protected final Object format
+        protected final Class clazz
+        private final int priority
+        private final int seq
+
+        FormatEntry(Class clazz, Object format, int priority) {
+<span class="fc" id="L176">            this.clazz = clazz</span>
+<span class="fc" id="L177">            this.format = format</span>
+<span class="fc" id="L178">            this.priority = priority</span>
+<span class="fc" id="L179">            seq = FORMAT_SEQUENCE.incrementAndGet()</span>
+        }
+
+        int compareTo(FormatEntry entry) {
+<span class="fc bfc" id="L183" title="All 4 branches covered.">            priority == entry.priority ? entry.seq - seq : entry.priority - priority</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

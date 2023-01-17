@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CellFinder.groovy</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">excel-builder</a> &gt; <a href="index.source.html" class="el_package">com.jameskleeh.excel</a> &gt; <span class="el_source">CellFinder.groovy</span></div><h1>CellFinder.groovy</h1><pre class="source lang-java linenums">/*
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+&quot;License&quot;); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+&quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+*/
+package com.jameskleeh.excel
+
+import groovy.transform.CompileStatic
+import org.apache.poi.ss.util.CellReference
+import org.apache.poi.xssf.usermodel.XSSFCell
+
+/**
+ * A class to get references to cells for use in other functions
+ *
+ * @author James Kleeh
+ * @since 0.1.0
+ */
+@CompileStatic
+class CellFinder {
+
+    private final XSSFCell cell
+    private final Map&lt;Object, Integer&gt; columnIndexes
+
+    CellFinder(XSSFCell cell, Map&lt;Object, Integer&gt; columnIndexes) {
+<span class="fc" id="L38">        this.cell = cell</span>
+<span class="fc" id="L39">        this.columnIndexes = columnIndexes</span>
+    }
+
+    /**
+     * @return The current row number (1 based)
+     */
+    int getRow() {
+<span class="fc" id="L46">        cell.rowIndex + 1</span>
+    }
+
+    /**
+     * @return The current column (A..Z)
+     */
+    String getColumn() {
+<span class="fc" id="L53">        relativeColumn(0)</span>
+    }
+
+    private int relativeRow(int index) {
+<span class="fc" id="L57">        int rowIndex = row + index</span>
+<span class="fc bfc" id="L58" title="All 4 branches covered.">        if (rowIndex &lt; 1) {</span>
+<span class="fc" id="L59">            throw new IllegalArgumentException(&quot;An invalid row index of $rowIndex was specified&quot;)</span>
+        }
+<span class="fc" id="L61">        rowIndex</span>
+    }
+
+    private String relativeColumn(int index) {
+<span class="fc" id="L65">        exactColumn(cell.columnIndex + index)</span>
+    }
+
+    private String exactColumn(int index) {
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (index &gt; -1) {</span>
+<span class="fc" id="L70">            CellReference.convertNumToColString(index)</span>
+<span class="nc" id="L71">        } else {</span>
+<span class="fc" id="L72">            throw new IllegalArgumentException(&quot;An invalid column index of $index was specified&quot;)</span>
+<span class="nc" id="L73">        }</span>
+    }
+
+    /**
+     * Retrieves a cell relative to the current cell. Use negative values to reference rows and columns before the current cell and positive values to reference rows and columns after the current cell.
+     *
+     * @param columnIndex The column index
+     * @param rowIndex The row index
+     * @return A cell relative to the current cell
+     */
+    String relativeCell(int columnIndex, int rowIndex) {
+<span class="fc" id="L84">        relativeColumn(columnIndex) + relativeRow(rowIndex)</span>
+    }
+
+    /**
+     * Retrieves a cell relative to the current cell. Use negative values to reference previous columns and positive values to reference columns after the current cell.
+     *
+     * @param columnIndex The column index
+     * @return A cell relative to the current cell
+     */
+    String relativeCell(int columnIndex) {
+<span class="fc" id="L94">        relativeCell(columnIndex, 0)</span>
+    }
+
+    /**
+     * Retrieves an exact cell reference
+     *
+     * @param columnIndex The column index
+     * @param rowIndex The row index
+     * @return The desired cell
+     */
+    String exactCell(int columnIndex, int rowIndex) {
+<span class="fc bfc" id="L105" title="All 4 branches covered.">        if (rowIndex &lt; 0) {</span>
+<span class="fc" id="L106">            throw new IllegalArgumentException(&quot;An invalid row index of $rowIndex was specified&quot;)</span>
+        }
+<span class="fc" id="L108">        exactColumn(columnIndex) + (rowIndex + 1)</span>
+    }
+
+    /**
+     * Retrieves an exact cell reference based on a previously defined column definition (created by {@link com.jameskleeh.excel.internal.CreatesCells#column} and row index
+     *
+     * @param columnName The column identifier
+     * @param rowIndex The row index
+     * @return The desired cell
+     */
+    String exactCell(String columnName, int rowIndex) {
+<span class="pc bpc" id="L119" title="1 of 6 branches missed.">        if (columnIndexes &amp;&amp; columnIndexes.containsKey(columnName)) {</span>
+<span class="fc" id="L120">            exactCell(columnIndexes[columnName], rowIndex)</span>
+<span class="nc" id="L121">        } else {</span>
+<span class="fc" id="L122">            throw new IllegalArgumentException(&quot;Column index not specified for $columnName&quot;)</span>
+<span class="nc" id="L123">        }</span>
+    }
+
+    /**
+     * Retrieves an exact cell reference based on a previously defined column definition (created by {@link com.jameskleeh.excel.internal.CreatesCells#column}
+     *
+     * @param columnName The column identifier
+     * @return The actual header column
+     */
+    String exactCell(String columnName) {
+<span class="fc" id="L133">        exactCell(columnName, 0)</span>
+    }
+
+    /**
+     * @return The current sheet name
+     */
+    String getSheetName() {
+<span class="fc" id="L140">        cell.sheet.sheetName</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>
